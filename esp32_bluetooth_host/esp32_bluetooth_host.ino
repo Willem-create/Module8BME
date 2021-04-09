@@ -40,9 +40,9 @@ void loop() {
   Wire.requestFrom(MPU_addr, 14, true); // request a total of 14 registers
   for (int i = 0; i < 14; i++) {
     if (i < 6) {
-      input[i] = Wire.read();
+      output[i] = Wire.read();
     } else if (i > 7) {
-      input[i-2] = Wire.read();
+      output[i-2] = Wire.read();
     }
   }
   /*
