@@ -2,6 +2,11 @@ import bluetooth
 import time
 import matplotlib.pyplot as plt  # libary to plot
 from scipy.ndimage.filters import uniform_filter1d  # moving average filter
+from numpy import nanmean
+from OpenGL.GL import *
+from OpenGL.GLU import *
+import pygame
+from pygame.locals import *
 
 print("Scanning...")
 devices = bluetooth.discover_devices(lookup_names=True)
@@ -63,7 +68,17 @@ def my_3dplot(xs, ys, zs):  # create 3d plots with all the data
     ax.plot3D(xs, ys, zs)
     plt.show()
 
-for i in range(1000):
+x_acc_med = []
+line = ((0,0,0),(1,0,0))
+pygame.init()
+display = (800, 600)
+pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
+gluPerspective(100, (display[0] / display[1]), 0.1, 50.0)
+glTranslatef(0.0, 0.0, -5)
+x_angle = 0
+x_set_angle = 0
+while True:
+
     for sensor in sensors:
         inbytes = b''
         while len(inbytes)<12:
@@ -75,7 +90,30 @@ for i in range(1000):
         for k in range(6):
             readings[k].append(output[k])
             IMU_data[k] = uniform_filter1d(readings[k], size=N)
-            print(output)
+
+        x_acc_med.append(output[0])
+        if(len(x_acc_med)>=50):
+            x_acc_med.pop(0)
+
+        x_set_angle = x_angle
+        x_angle = nanmean(x_acc_med)
+        turn =(x_set_angle - x_angle )/180
+        print(turn)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            quit()
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    # glRotatef((x_prev_angle-x_angle)/100, 0, 0, 1)
+    glRotatef(turn,0,0,1)
+    glBegin(GL_LINES)
+    glVertex3fv(line[0])
+
+    glVertex3fv(line[1])
+    glEnd()
+    pygame.display.flip()
+    # pygame.time.wait(10)
 
 
 

@@ -1,0 +1,47 @@
+import msvcrt
+
+a = 1
+b = 2
+c = 3
+
+ax = []
+ax.append(a)
+print(ax)
+ax.append(b)
+print(ax)
+ax.pop(0)
+print(ax)
+
+verticies = (
+    (1, -1, -1),
+    (1, 1, -1),
+    (-1, 1, -1),
+    (-1, -1, -1),
+    (1, -1, 1),
+    (1, 1, 1),
+    (-1, -1, 1),
+    (-1, 1, 1)
+)
+
+edges = (
+    (0, 1),
+    (0, 3),
+    (0, 4),
+    (2, 1),
+    (2, 3),
+    (2, 7),
+    (6, 3),
+    (6, 4),
+    (7, 6),
+    (5, 1),
+    (5, 4),
+    (5, 7)
+)
+
+print(verticies[edges[0]])
+
+# while True:
+#     if msvcrt.kbhit() and msvcrt.getch() == b'\x1b':
+#         break
+#
+# print("Broke")
