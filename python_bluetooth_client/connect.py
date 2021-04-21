@@ -49,19 +49,18 @@ for sensor in sensors:
     sensor.send('a')
 
 
-# def my_filter(x):  # movingaverage filter + plots
-# x_co_gy = uniform_filter1d(x, size=N)
-# y_co = uniform_filter1d(y, size=N)
-# z_co = uniform_filter1d(z, size=N)
-# my_plot(x, x_co_gy, 'x_co')
-# my_plot(y, y_co, 'y_co')
-# my_plot(z, z_co, 'z_co')
+#def my_filter(x):  # movingaverage filter + plots
+    #x_co_gy = uniform_filter1d(x, size=N)
+    #y_co = uniform_filter1d(y, size=N)
+    #z_co = uniform_filter1d(z, size=N)
+    #my_plot(x, x_co_gy, 'x_co')
+    #my_plot(y, y_co, 'y_co')
+    #my_plot(z, z_co, 'z_co')
 def my_plot(x_1, y_1, title):  # create the plots
     plt.plot(x_1)
     plt.plot(y_1)
     plt.xlabel(title)
     plt.show()
-
 
 def my_3dplot(xs, ys, zs):  # create 3d plots with all the data
     fig = plt.figure()
@@ -69,9 +68,8 @@ def my_3dplot(xs, ys, zs):  # create 3d plots with all the data
     ax.plot3D(xs, ys, zs)
     plt.show()
 
-
 x_acc_med = []
-line = ((0, 0, 0), (1, 0, 0))
+line = ((0,0,0),(1,0,0))
 pygame.init()
 display = (800, 600)
 pygame.display.set_mode(display, DOUBLEBUF | OPENGL)
@@ -79,37 +77,34 @@ gluPerspective(100, (display[0] / display[1]), 0.1, 50.0)
 glTranslatef(0.0, 0.0, -5)
 x_angle = 0
 x_set_angle = 0
-turn = 0
-acc_x = 0
-zero_point = 32677
-sensitivity_acc = 16384
-
 while True:
 
     for sensor in sensors:
         inbytes = b''
-        while len(inbytes) < 12:
-            inbytes += sensor.recv(12 - len(inbytes))
+        inbyte = [inbytes]*6
+        while len(inbytes)<12:
+            inbytes+=sensor.recv(12-len(inbytes))
+        for z in range(0,6):
+            inbyte[z] += inbytes[z*2:z*2+2]
+            inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")
         sensor.send('a')
-        # input = sensor.recv(12)
+        #input = sensor.recv(12)
         for j in range(0, 12, 2):
-            output[int(j / 2)] = inbytes[j] << 8 | inbytes[j + 1]
-            # print(output)
+            output[int(j/2)] = inbytes[j] << 8 | inbytes[j + 1]
+            #output[int(j/2)] = int.from_bytes(inbytes[j]<<8|inbytes[j+1],"big", signed="True")
         for k in range(6):
             readings[k].append(output[k])
-            IMU_data[k] = uniform_filter1d(readings[k], size=N)
-            if len(IMU_data[k]) >= 50:
-                IMU_data[k].pop(0)
-
+            #IMU_data[k] = uniform_filter1d(readings[k], size=N)
+        #print(inbytes[0]|inbytes[1])
+        print(inbyte)
         x_acc_med.append(output[0])
-        if len(x_acc_med) >= 50:
+        if(len(x_acc_med)>=50):
             x_acc_med.pop(0)
 
         x_set_angle = x_angle
         x_angle = nanmean(x_acc_med)
-        turn = (x_set_angle - x_angle) / 180
-        acc_x = (x_angle - zero_point) / sensitivity_acc
-        # print(acc_x)
+        turn =(x_set_angle - x_angle )/180
+        # print(turn)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -117,7 +112,7 @@ while True:
             quit()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     # glRotatef((x_prev_angle-x_angle)/100, 0, 0, 1)
-    glRotatef(turn, 0, 0, 1)
+    glRotatef(turn,0,0,1)
     glBegin(GL_LINES)
     glVertex3fv(line[0])
 
@@ -125,6 +120,8 @@ while True:
     glEnd()
     pygame.display.flip()
     # pygame.time.wait(10)
+
+
 
 end = time.time()
 avg = (end - start) / 1000
@@ -134,5 +131,5 @@ print('frequency: %f' % f)
 for i in range(6):
     my_plot(readings[i], IMU_data[i], 'x_co')
 
-# my_3dplot(IMU_data[0], IMU_data[1], IMU_data[2])
+#my_3dplot(IMU_data[0], IMU_data[1], IMU_data[2])
 my_3dplot(IMU_data[3], IMU_data[4], IMU_data[5])
