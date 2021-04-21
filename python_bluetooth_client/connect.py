@@ -81,16 +81,22 @@ while True:
 
     for sensor in sensors:
         inbytes = b''
+        inbyte = [inbytes]*6
         while len(inbytes)<12:
             inbytes+=sensor.recv(12-len(inbytes))
+        for z in range(0,6):
+            inbyte[z] += inbytes[z*2:z*2+2]
+            inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")
         sensor.send('a')
         #input = sensor.recv(12)
         for j in range(0, 12, 2):
             output[int(j/2)] = inbytes[j] << 8 | inbytes[j + 1]
+            #output[int(j/2)] = int.from_bytes(inbytes[j]<<8|inbytes[j+1],"big", signed="True")
         for k in range(6):
             readings[k].append(output[k])
-            IMU_data[k] = uniform_filter1d(readings[k], size=N)
-
+            #IMU_data[k] = uniform_filter1d(readings[k], size=N)
+        #print(inbytes[0]|inbytes[1])
+        print(inbyte)
         x_acc_med.append(output[0])
         if(len(x_acc_med)>=50):
             x_acc_med.pop(0)
@@ -98,7 +104,7 @@ while True:
         x_set_angle = x_angle
         x_angle = nanmean(x_acc_med)
         turn =(x_set_angle - x_angle )/180
-        print(turn)
+        # print(turn)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
