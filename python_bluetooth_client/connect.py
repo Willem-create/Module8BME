@@ -7,9 +7,11 @@ devices = bluetooth.discover_devices(lookup_names=True)     # searches for bluet
 print(devices)
 filter_list = [[] for _ in range(6)]                        # creates list for moving average
 wirelessIMUs = []
+sensitivity_acc = 2048
+sensitivity_gyro = 16.4
 
 for device in devices:
-    if device[1] == 'WirelessIMU4':                         # searches for a device called: WirelessIMUX. in which X is the number on your casing
+    if device[1] == 'WirelessIMU':                         # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
@@ -35,6 +37,7 @@ for IMU in IMUservices:
 start = time.time()
 
 output = [None] * 6
+output_real = [None]*6
 
 for sensor in sensors:
     sensor.send('a')
@@ -45,10 +48,16 @@ def moving_average(input, k):
     if (len(filter_list[k]) >= 50):
         filter_list[k].pop(0)
     # x_set_angle = x_angle
-    x_final = nanmean(filter_list[k])
+    final = nanmean(filter_list[k])
     # turn = (x_set_angle - x_angle) / 180
-    return int(x_final)
+    return int(final)
 
+def real_numbers(input, k):
+    if k < 3:
+        converted = input/sensitivity_acc
+    if k > 2:
+        converted = input/sensitivity_gyro
+    return converted
 
 while True:
 
@@ -61,10 +70,9 @@ while True:
             inbyte[z] += inbytes[z * 2:z * 2 + 2]
             inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")
             output[z] = moving_average(inbyte[z], z)
+            output_real[z] = real_numbers(output[z], z)
         sensor.send('a')
-
-        print(inbyte, output)
-
+        print(inbyte, output, output_real)
 
 # end = time.time()
 # avg = (end - start) / 1000
