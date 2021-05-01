@@ -11,14 +11,14 @@ sensitivity_acc = 2048
 sensitivity_gyro = 16.4
 
 for device in devices:
-    if device[1] == 'WirelessIMU':                         # searches for a device called: WirelessIMUX. in which X is the number on your casing
+    if device[1] == 'WirelessIMU':                          # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
 
 IMUservices = []
 
-for addr, name in wirelessIMUs:
+for addr, name in wirelessIMUs:                             #if correct devices are found add them to the list for connection
     print("Connecting to: ", addr)
     services = bluetooth.find_service(address=addr)
     for serv in services:
@@ -27,7 +27,7 @@ for addr, name in wirelessIMUs:
 
 sensors = []
 
-for IMU in IMUservices:
+for IMU in IMUservices:                                     #initialize the IMU's as sensors
     sensor = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     sensor.connect((IMU['host'], IMU['port']))
     sensor.setblocking(0)
@@ -36,28 +36,26 @@ for IMU in IMUservices:
 
 start = time.time()
 
-output = [None] * 6
+output = [None] * 6                                         #Create list to store data
 output_real = [None]*6
 
 for sensor in sensors:
     sensor.send('a')
 
 
-def moving_average(input, k):
-    filter_list[k].append(input)
-    if (len(filter_list[k]) >= 50):
+def moving_average(input, k):                               #moving average function returns the moving average of the data
+    filter_list[k].append(input)                            #add new value to the list
+    if (len(filter_list[k]) >= 1):                          #if list is larger then N remove the oldest data point, N determines the size of your list for the moving average
         filter_list[k].pop(0)
-    # x_set_angle = x_angle
-    final = nanmean(filter_list[k])
-    # turn = (x_set_angle - x_angle) / 180
-    return int(final)
+    final = nanmean(filter_list[k])                         #Calculate the mean of the list
+    return int(final)                                       #Return mean
 
-def real_numbers(input, k):
-    if k < 3:
+def real_numbers(input, k):                                 #real numbers function transfers into actual values
+    if k <= 2:                                              #first 3 are acc data so divide by that sensitivity
         converted = input/sensitivity_acc
-    if k > 2:
+    if k >= 3:                                              #Last 3 are gyro data so divide by that sensitivity
         converted = input/sensitivity_gyro
-    return converted
+    return converted                                        #returns converted value
 
 while True:
 
@@ -65,14 +63,14 @@ while True:
         inbytes = b''
         inbyte = [inbytes] * 6
         while len(inbytes) < 12:
-            inbytes += sensor.recv(12 - len(inbytes))
+            inbytes += sensor.recv(12 - len(inbytes))       #Collects data from sensor in bytes
         for z in range(0, 6):
             inbyte[z] += inbytes[z * 2:z * 2 + 2]
-            inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")
-            output[z] = moving_average(inbyte[z], z)
-            output_real[z] = real_numbers(output[z], z)
+            inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True") #converts from bytes to int
+            output[z] = moving_average(inbyte[z], z)                    #Calls moving average function
+            output_real[z] = real_numbers(output[z], z)                 #calls real_numbers function
         sensor.send('a')
-        print(inbyte, output, output_real)
+        print(output_real)                                              #prints output
 
 # end = time.time()
 # avg = (end - start) / 1000
