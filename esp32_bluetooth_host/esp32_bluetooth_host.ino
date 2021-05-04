@@ -170,7 +170,7 @@ String getBluetoothAddress() {
   String addrString = String();
   for (int i = 0; i < 2; i++) {
     char str[3];
-    sprintf(str, "%02X", (int)address[i]);
+    sprintf(str, "%02X", (int)address[i+4]);
     addrString = String(addrString + str);
   }
   return addrString;
