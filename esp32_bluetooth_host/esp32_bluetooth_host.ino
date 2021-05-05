@@ -116,6 +116,7 @@ void readIMUCode( void * parameter) {
         output[i] = Wire.read();
       } else if (i > 7) {
         output[i - 2] = Wire.read();
+      }else{Wire.read();
       }
     }
   }
