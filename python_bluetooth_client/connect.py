@@ -71,4 +71,3 @@ while True:
             output_real[z] = real_numbers(output[z], z)  # calls real_numbers function
         sensor.send('a')
         print(sensor, output_real)
-        #print(int.from_bytes(inbytes[6:8], "big", signed="True"))  # prints output
