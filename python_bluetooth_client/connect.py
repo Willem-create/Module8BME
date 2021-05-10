@@ -1,5 +1,6 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
 from numpy import nanmean  # import numpy to calculate mean for moving average
+import csv
 
 print("Scanning...")
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
@@ -8,6 +9,18 @@ filter_list = [[] for _ in range(6)]  # creates list for moving average
 wirelessIMUs = []
 sensitivity_acc = 2048
 sensitivity_gyro = 16.4
+
+csv_index1 = 0
+csv_index2 = 0
+
+With open('sensorA.csv', mode='w') as sensorA:
+fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
+writerA= csv.DictWriter(sensorA, fieldnames=fieldnames)
+
+With open('sensorB.csv', mode='w') as sensorB:
+fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
+writerB= csv.DictWriter(sensorB, fieldnames=fieldnames)
+
 
 for device in devices:
     if device[1] == 'WirelessIMU-A' or device[1] == 'WirelessIMU-B':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
@@ -69,5 +82,10 @@ while True:
             inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")  # converts from bytes to int
             output[z] = moving_average(inbyte[z], z)  # Calls moving average function
             output_real[z] = real_numbers(output[z], z)  # calls real_numbers function
+            
+        writerA.writeheader()
+        writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
+        csv_index1 += 1
+            
         sensor.send('a')
         print(sensor, output_real)
