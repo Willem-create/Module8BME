@@ -3,6 +3,9 @@ from numpy import nanmean  # import numpy to calculate mean for moving average
 import csv
 from pprint import pprint
 import math
+import time
+oldAngle = 0
+oldTime = time.time()
 
 print("Scanning...")
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
@@ -84,6 +87,7 @@ def real_numbers(input, k):  # real numbers function transfers into actual value
 
 while True:
     switch = True
+
     for sensor in sensors:
 
         inbytes = b''
@@ -93,9 +97,9 @@ while True:
         for z in range(0, 6):
             inbyte[z] += inbytes[z * 2:z * 2 + 2]
             inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")  # converts from bytes to int
-            output[z] = moving_average(inbyte[z], z)  # Calls moving average function
-            output_real[z] = real_numbers(output[z], z)  # calls real_numbers function
-            
+            #output[z] = moving_average(inbyte[z], z)  # Calls moving average function
+            output_real[z] = real_numbers(inbyte[z], z)  # calls real_numbers function
+            print(sensor, output_real[2])
 
         #writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
         csv_index1 += 1
@@ -108,13 +112,16 @@ while True:
         else:
             f = open("sensorB.csv", "a")
             first_part=output_A[0]*output_real[0]+output_A[1]*output_real[1]+output_A[2]*output_real[2]
-            sqrA=math.sqrt(output_A[0]^2+output_A[1]^2+output_A[2]^2)
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
             sqrB=math.sqrt(pow(output_real[0],2)+pow(output_real[1],2)+pow(output_real[2],2))
             angle=first_part/(sqrA*sqrB)
+            if angle>1:
+                angle=1
             angle_radian=math.acos(angle)
-            angle_degree=angle_radian*180/math.pi
-            print(str(angle_degree))
+            # angle_degree=angle_radian*180/math.pi
+            # print("angle = "+ str(angle)+ "first_part = "+ str(first_part)+ " sqrA = "+str(sqrA)+ " aqrB = "+ str(sqrB)+ " output_A[0] = "+str(output_A[0])+ "output_A[1] = "+str(output_A[1]) + " output_A[2] = "+ str(output_A[2]))
+            # print(oldAngle*180/math.pi)
+            #print(output_A[2],output_real[2])
 
             switch = True
         # f = open("sensorA.csv", "a")
@@ -125,5 +132,5 @@ while True:
         f.close()
 
         sensor.send('a')
-        # pprint(sensor)
+        print(sensor, output_real[3])
 
