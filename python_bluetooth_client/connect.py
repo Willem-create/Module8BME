@@ -114,6 +114,7 @@ while True:
             angle=first_part/(sqrA*sqrB)
             angle_radian=math.acos(angle)
             angle_degree=angle_radian*180/math.pi
+            print(str(angle_degree))
 
             switch = True
         # f = open("sensorA.csv", "a")
@@ -125,4 +126,4 @@ while True:
 
         sensor.send('a')
         # pprint(sensor)
-        print(str(angle_degree))
+
