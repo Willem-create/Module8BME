@@ -1,6 +1,8 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
 from numpy import nanmean  # import numpy to calculate mean for moving average
 import csv
+from pprint import pprint
+import math
 
 print("Scanning...")
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
@@ -33,7 +35,7 @@ with open('sensorB.csv', mode='w') as sensorB:
 
 
 for device in devices:
-    if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-OBE6':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
+    if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
@@ -81,7 +83,7 @@ def real_numbers(input, k):  # real numbers function transfers into actual value
 
 
 while True:
-    switch = False
+    switch = True
     for sensor in sensors:
 
         inbytes = b''
@@ -98,17 +100,29 @@ while True:
         #writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
         csv_index1 += 1
 
+
         if switch:
             f = open("sensorA.csv", "a")
+            output_A=output_real
             switch = False
         else:
             f = open("sensorB.csv", "a")
+            first_part=output_A[0]*output_real[0]+output_A[1]*output_real[1]+output_A[2]*output_real[2]
+            sqrA=math.sqrt(output_A[0]^2+output_A[1]^2+output_A[2]^2)
+            sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
+            sqrB=math.sqrt(pow(output_real[0],2)+pow(output_real[1],2)+pow(output_real[2],2))
+            angle=first_part/(sqrA*sqrB)
+            angle_radian=math.acos(angle)
+            angle_degree=angle_radian*180/math.pi
+
             switch = True
+        # f = open("sensorA.csv", "a")
         csv_output=str(output_real)
-        csv_output.replace("[","")
-        csv_output.replace("]","")
+        csv_output=csv_output.replace("[","")
+        csv_output=csv_output.replace("]","")
         f.write(str(csv_index1)+","+csv_output+"\n")
         f.close()
 
         sensor.send('a')
-        print(sensor, output_real)
+        # pprint(sensor)
+        print(str(angle_degree))
