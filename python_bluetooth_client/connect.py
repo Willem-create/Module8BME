@@ -12,18 +12,28 @@ sensitivity_gyro = 16.4
 
 csv_index1 = 0
 csv_index2 = 0
+f = open("sensorA.csv", "w")
+f.write(" ")
+f.close()
 
-With open('sensorA.csv', mode='w') as sensorA:
-fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
-writerA= csv.DictWriter(sensorA, fieldnames=fieldnames)
+f = open("sensorB.csv", "w")
+f.write(" ")
+f.close()
 
-With open('sensorB.csv', mode='w') as sensorB:
-fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
-writerB= csv.DictWriter(sensorB, fieldnames=fieldnames)
+with open('sensorA.csv', mode='w') as sensorA:
+    fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
+    writerA= csv.DictWriter(sensorA, fieldnames=fieldnames)
+    writerA.writeheader()
+
+with open('sensorB.csv', mode='w') as sensorB:
+    fieldnames = ['index', 'accX', 'accY', 'accZ', 'gyroX', 'gyroY', 'gyroZ']
+    writerB= csv.DictWriter(sensorB, fieldnames=fieldnames)
+
+
 
 
 for device in devices:
-    if device[1] == 'WirelessIMU-A' or device[1] == 'WirelessIMU-B':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
+    if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-OBE6':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
@@ -71,8 +81,9 @@ def real_numbers(input, k):  # real numbers function transfers into actual value
 
 
 while True:
-
+    switch = False
     for sensor in sensors:
+
         inbytes = b''
         inbyte = [inbytes] * 6
         while len(inbytes) < 12:
@@ -83,9 +94,21 @@ while True:
             output[z] = moving_average(inbyte[z], z)  # Calls moving average function
             output_real[z] = real_numbers(output[z], z)  # calls real_numbers function
             
-        writerA.writeheader()
-        writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
+
+        #writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
         csv_index1 += 1
-            
+
+        if switch:
+            f = open("sensorA.csv", "a")
+            switch = False
+        else:
+            f = open("sensorB.csv", "a")
+            switch = True
+        csv_output=str(output_real)
+        csv_output.replace("[","")
+        csv_output.replace("]","")
+        f.write(str(csv_index1)+","+csv_output+"\n")
+        f.close()
+
         sensor.send('a')
         print(sensor, output_real)

@@ -12,6 +12,6 @@ with open('sensorA.csv', mode='w') as sensorA:
 
 
 while start:
-    writerA.writerow({'index': '1', 'accX': '1', 'accY': '1', 'accZ': '1', 'gyroX': '1',
-                      'gyroY': '1', 'gyroZ': '1'})
+    writerA.writerow('index': '1', 'accX': '1', 'accY': '1', 'accZ': '1', 'gyroX': '1',
+                      'gyroY': '1', 'gyroZ': '1')
     csv_index1 += 1
