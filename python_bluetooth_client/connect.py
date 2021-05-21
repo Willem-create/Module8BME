@@ -15,10 +15,9 @@ wirelessIMUs = []
 sensitivity_acc = 2048
 sensitivity_gyro = 16.4
 output_A = list()
-output_B = str()
+kneeAngle= list()
 
 csv_index1 = 0
-csv_index2 = 0
 f = open("sensorA.csv", "w")
 f.write(" ")
 f.close()
@@ -89,7 +88,6 @@ def real_numbers(input, k):  # real numbers function transfers into actual value
 
 while True:
     switch = True
-    print("start new loop")
     for sensor in sensors:
 
         inbytes = b''
@@ -103,20 +101,14 @@ while True:
             output_real[z] = real_numbers(inbyte[z], z)  # calls real_numbers function
             # print(sensor, output_real[2])
 
-        #writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
         csv_index1 += 1
-
 
         if switch:
             f = open("sensorA.csv", "a")
-            sensorName= "sensorA"
             output_A=list(output_real)
             switch = False
-            # print(" just did switch=true (sensorA)")
-            # print("output_A "+str(output_A))
         else:
             f = open("sensorB.csv", "a")
-            sensorName = "sensorB"
             output_B=str(output_real)
             first_part=output_A[0]*output_real[0]+output_A[1]*output_real[1]+output_A[2]*output_real[2]
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
@@ -126,23 +118,15 @@ while True:
                 angle=1
             angle_radian=math.acos(angle)
             angle_degree=angle_radian*180/math.pi
-            # print("angle = "+ str(angle)+ "first_part = "+ str(first_part)+ " sqrA = "+str(sqrA)+ " aqrB = "+ str(sqrB)+ " output_A[0] = "+str(output_A[0])+ "output_A[1] = "+str(output_A[1]) + " output_A[2] = "+ str(output_A[2]))
             print(str(angle_degree))
-            # print(oldAngle*180/math.pi)
-            #print(output_A[2],output_real[2])
-            # print("-SensorA: gyrX,"+str(round(output_A[0],3))+" gyrY,"+str(round(output_A[1],3))+" gyrZ,"+str(round(output_A[2],3))+"  -SensorB: gyrX,"+str(round(output_real[0],3))+" gyrY,"+str(round(output_real[1],3))+" gyrZ,"+str(round(output_real[2],3)))
-            # time.sleep(1)
+            kneeAngle.append(angle_degree)
             switch = True
-            # print(" just did switch=false (sensorB)")
-            # print("output_B "+output_B)
-            # print("output_A "+str(output_A))
-        # f = open("sensorA.csv", "a")
+
         csv_output=str(output_real)
         csv_output=csv_output.replace("[","")
         csv_output=csv_output.replace("]","")
         f.write(str(csv_index1)+","+csv_output+"\n")
         f.close()
-        # print(sensorName+" "+str(csv_index1)+","+csv_output)
 
         sensor.send('a')
         # print(sensor, output_real[3])
