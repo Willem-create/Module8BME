@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 
 print("startplz")
+calculated= True
 oldAngle = 0
 oldTime = time.time()
 
@@ -128,18 +129,18 @@ while True:
             angle_degree=angle_radian*180/math.pi
             print(str(angle_degree))
             kneeAngle.append(angle_degree)
-            kneeTime.append(time.time())
+            kneeTime.append(time.time())  #get the timestamp
             
 
-            peaksy, _ = find_peaks(kneeAngle,prominence=5)
+            peaksy, _ = find_peaks(kneeAngle,prominence=3)  #get the peaks
             switch = True
             xpoints2 = np.array(kneeTime)
             ypoints2 = np.array(kneeAngle)
 
-            averages = 10
-            waitforpeaks=10
-            if len(peaksy)==(averages*2)+1+waitforpeaks:
-                
+            averages = 10 #number of averages to take
+            waitforpeaks=5 #wait for this amount of peaks before calculating
+            if len(peaksy)==(averages*2)+1+waitforpeaks and calculated:  
+                calculated = False
                 averagelength=round((peaksy[averages*2]-peaksy[0])/averages)
 
                 sampley=[]
