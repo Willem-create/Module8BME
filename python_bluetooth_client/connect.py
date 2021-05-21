@@ -14,6 +14,7 @@ filter_list = [[] for _ in range(6)]  # creates list for moving average
 wirelessIMUs = []
 sensitivity_acc = 2048
 sensitivity_gyro = 16.4
+output_A = 0
 
 csv_index1 = 0
 csv_index2 = 0
@@ -99,7 +100,7 @@ while True:
             inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")  # converts from bytes to int
             #output[z] = moving_average(inbyte[z], z)  # Calls moving average function
             output_real[z] = real_numbers(inbyte[z], z)  # calls real_numbers function
-            print(sensor, output_real[2])
+            # print(sensor, output_real[2])
 
         #writerA.writerow({'index': csv_index1, 'accX': output[0], 'accY': output[1], 'accZ': output[2], 'gyroX': output[3], 'gyroY': output[4], 'gyroZ': output[6]})
         csv_index1 += 1
@@ -107,10 +108,12 @@ while True:
 
         if switch:
             f = open("sensorA.csv", "a")
+            sensorName= "sensorA"
             output_A=output_real
             switch = False
         else:
             f = open("sensorB.csv", "a")
+            sensorName = "sensorB"
             first_part=output_A[0]*output_real[0]+output_A[1]*output_real[1]+output_A[2]*output_real[2]
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
             sqrB=math.sqrt(pow(output_real[0],2)+pow(output_real[1],2)+pow(output_real[2],2))
@@ -122,7 +125,8 @@ while True:
             # print("angle = "+ str(angle)+ "first_part = "+ str(first_part)+ " sqrA = "+str(sqrA)+ " aqrB = "+ str(sqrB)+ " output_A[0] = "+str(output_A[0])+ "output_A[1] = "+str(output_A[1]) + " output_A[2] = "+ str(output_A[2]))
             # print(oldAngle*180/math.pi)
             #print(output_A[2],output_real[2])
-
+            print("-SensorA: gyrX,"+str(round(output_A[3],3))+" gyrY,"+str(round(output_A[4],3))+" gyrZ,"+str(round(output_A[5],3))+"  -SensorB: gyrX,"+str(round(output_real[3],3))+" gyrY,"+str(round(output_real[4],3))+" gyrZ,"+str(round(output_real[5],3)))
+            time.sleep(1)
             switch = True
         # f = open("sensorA.csv", "a")
         csv_output=str(output_real)
@@ -130,7 +134,8 @@ while True:
         csv_output=csv_output.replace("]","")
         f.write(str(csv_index1)+","+csv_output+"\n")
         f.close()
+        print(sensorName+" "+str(csv_index1)+","+csv_output)
 
         sensor.send('a')
-        print(sensor, output_real[3])
+        # print(sensor, output_real[3])
 
