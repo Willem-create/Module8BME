@@ -6,7 +6,6 @@ import matplotlib.animation as animation
 from scipy.signal import find_peaks
 from scipy import interpolate
 import random
-from operator import add
 
 fig,axs = plt.subplots(3)
 
