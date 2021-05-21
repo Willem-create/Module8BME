@@ -1,9 +1,16 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
 from numpy import nanmean  # import numpy to calculate mean for moving average
+import numpy as np
 import csv
 from pprint import pprint
 import math
 import time
+from scipy.signal import find_peaks
+from scipy import interpolate
+import matplotlib.pyplot as plt
+
+
+print("startplz")
 oldAngle = 0
 oldTime = time.time()
 
@@ -16,6 +23,7 @@ sensitivity_acc = 2048
 sensitivity_gyro = 16.4
 output_A = list()
 kneeAngle= list()
+kneeTime = list()
 
 csv_index1 = 0
 f = open("sensorA.csv", "w")
@@ -120,7 +128,52 @@ while True:
             angle_degree=angle_radian*180/math.pi
             print(str(angle_degree))
             kneeAngle.append(angle_degree)
+            kneeTime.append(time.time())
+            
+
+            peaksy, _ = find_peaks(kneeAngle,prominence=5)
             switch = True
+            xpoints2 = np.array(kneeTime)
+            ypoints2 = np.array(kneeAngle)
+
+            averages = 10
+            waitforpeaks=10
+            if len(peaksy)==(averages*2)+1+waitforpeaks:
+                
+                averagelength=round((peaksy[averages*2]-peaksy[0])/averages)
+
+                sampley=[]
+                samplex=[]
+                taa=[0]*averagelength
+                outputsampley=[]
+                
+                for x in range(waitforpeaks,(averages*2)+waitforpeaks,2):
+                    
+                    samplex.append(xpoints2[peaksy[x]:peaksy[x+2]])
+                    sampley.append(ypoints2[peaksy[x]:peaksy[x+2]])
+
+                for x in range(0,len(samplex)):
+                    newx= np.linspace(samplex[x][0],samplex[x][-1],averagelength*len(samplex[x]))
+                    intf = interpolate.interp1d(samplex[x],sampley[x])
+                    interpsample = intf(newx)
+                    print(len(interpsample))
+
+                    for i in range(0,averagelength):
+                        taa[i] = (interpsample[i*len(samplex[x])])
+
+                    outputsampley.append(taa)
+                    taa=[0]*averagelength
+
+                average_stride=[0]*averagelength
+                    
+                for x in range(0,averages):
+                        average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
+                average_stride[:]=[x/(averages) for x in average_stride]
+                plt.plot(average_stride)
+                plt.show()
+                    
+
+
 
         csv_output=str(output_real)
         csv_output=csv_output.replace("[","")
