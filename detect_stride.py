@@ -7,15 +7,14 @@ from scipy.signal import find_peaks
 from scipy import interpolate
 import random
 
-
-fig,axs = plt.subplots(2)
+fig,axs = plt.subplots(3)
 
 tijd =0.001
 t = [0.001]
 amplitude=[0.001]*len(t)
 
 def calcstride(x):
-    y=-(math.sin(x)-0.5*math.cos(1.5*x)) +random.random()/4
+    y=-(math.sin(x)-0.5*math.cos(1.5*x)) +random.random()
     return y
 
 
@@ -28,36 +27,52 @@ def animate(i,xpoints,ypoints):
     xpoints2 = np.array(t)
     ypoints2 = np.array(amplitude)
 
-    xpoints = np.array(t[-100:])
-    ypoints = np.array(amplitude[-100:])
+    xpoints = np.array(t[-50:])
+    ypoints = np.array(amplitude[-50:])
     peaksy, _ = find_peaks(amplitude,prominence=1)
     axs[0].cla()
-    axs[0].set_xlim(tijd-10,tijd)
+    axs[0].set_xlim(tijd-5,tijd)
     
     axs[0].plot(xpoints2[peaksy],ypoints2[peaksy])
     axs[0].plot(xpoints,ypoints)
-    averages = 3
-    if len(peaksy)==(averages*2)+1:
+    averages = 5
+    waitforpeaks=2
+    if len(peaksy)==(averages*2)+1+waitforpeaks:
         
-        print(peaksy)
         averagelength=round((peaksy[averages*2]-peaksy[0])/averages)
-        print(averagelength)
 
         sampley=[]
         samplex=[]
-        for x in range(0,averages*2,2):
+        taa=[0]*averagelength
+        outputsampley=[]
+        
+        for x in range(waitforpeaks,(averages*2)+waitforpeaks,2):
             
             samplex.append(xpoints2[peaksy[x]:peaksy[x+2]])
             sampley.append(ypoints2[peaksy[x]:peaksy[x+2]])
 
-#            f = interpolate.interp1d(samplex, sampley)
-#            xnew = np.arange(0, averagelength)
-#            sampley = f(sampley)
-#            samplex = xnew
+        for x in range(0,len(samplex)):
+            newx= np.linspace(samplex[x][0],samplex[x][-1],averagelength*len(samplex[x]))
+            f = interpolate.interp1d(samplex[x],sampley[x])
+            interpsample = f(newx)
+            print(len(interpsample))
 
-        print(sampley)
-        axs[1].plot(sampley[0])
-ani = animation.FuncAnimation(fig, animate, fargs=(t[-100:], amplitude[-100:]), interval=0)
+            for i in range(0,averagelength):
+                taa[i] = (interpsample[i*len(samplex[x])])
+
+            outputsampley.append(taa)
+            taa=[0]*averagelength
+
+        average_stride=[0]*averagelength
+            
+        for x in range(0,averages):
+                average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
+        average_stride[:]=[x/(averages) for x in average_stride]
+       
+
+        axs[1].plot(average_stride)
+        axs[2].plot(outputsampley[1])
+ani = animation.FuncAnimation(fig, animate, fargs=(t[-50:], amplitude[-50:]), interval=0)
 
 plt.show()
     
