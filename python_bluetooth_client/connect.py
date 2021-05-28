@@ -4,6 +4,8 @@ import csv
 from pprint import pprint
 import math
 import time
+from python_bluetooth_client import Imu
+from python_bluetooth_client import ImuSensor
 oldAngle = 0
 oldTime = time.time()
 
@@ -43,76 +45,29 @@ for device in devices:
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
-
-IMUservices = []
-
-for addr, name in wirelessIMUs:  # if correct devices are found add them to the list for connection
-    print("Connecting to: ", addr)
-    services = bluetooth.find_service(address=addr)
-    for serv in services:
-        if serv['name'] == b'ESP32SPP\x00':
-            IMUservices.append(serv)
-
+bluetoothSocket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 sensors = []
-
-for IMU in IMUservices:  # initialize the IMU's as sensors
-    sensor = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
-    sensor.connect((IMU['host'], IMU['port']))
-    sensor.setblocking(0)
-    sensor.settimeout(1000)
-    sensors.append(sensor)
-
-output = [None] * 6  # Create list to store data
-output_real = [None] * 6
-
-for sensor in sensors:
-    sensor.send('a')
-
-
-def moving_average(input, k):  # moving average function !!for one sensor only now!!  returns the moving average of the data
-    filter_list[k].append(input)  # add new value to the list
-    if (len(filter_list[
-                k]) >= 2):  # if list is larger then N remove the oldest data point, N determines the size of your list for the moving average
-        filter_list[k].pop(0)
-    final = nanmean(filter_list[k])  # Calculate the mean of the list
-    return final  # Return mean
-
-
-def real_numbers(input, k):  # real numbers function transfers into actual values
-    if k <= 2:  # first 3 are acc data so divide by that sensitivity
-        converted = input / sensitivity_acc
-    if k >= 3:  # Last 3 are gyro data so divide by that sensitivity
-        converted = input / sensitivity_gyro
-    return converted  # returns converted value
-
+for addr, name in wirelessIMUs:  # if correct devices are found add them to the list for connection
+    #sensors.append(Imu.Imu(addr, name, sensitivity_acc, sensitivity_gyro, bluetoothSocket))
+    sensors.append(ImuSensor.ImuSensor(1, name))
 
 while True:
     switch = True
     for sensor in sensors:
 
-        inbytes = b''
-        inbyte = [inbytes] * 6
-        while len(inbytes) < 12:
-            inbytes += sensor.recv(12 - len(inbytes))  # Collects data from sensor in bytes
-        for z in range(0, 6):
-            inbyte[z] += inbytes[z * 2:z * 2 + 2]
-            inbyte[z] = int.from_bytes(inbyte[z], "big", signed="True")  # converts from bytes to int
-            #output[z] = moving_average(inbyte[z], z)  # Calls moving average function
-            output_real[z] = real_numbers(inbyte[z], z)  # calls real_numbers function
-            # print(sensor, output_real[2])
-
         csv_index1 += 1
-
         if switch:
             f = open("sensorA.csv", "a")
-            output_A=list(output_real)
+            #output_A=sensor.receive()
+            output_A =sensor.take_measurement()
             switch = False
         else:
             f = open("sensorB.csv", "a")
-            output_B=str(output_real)
-            first_part=output_A[0]*output_real[0]+output_A[1]*output_real[1]+output_A[2]*output_real[2]
+            #output_B=sensor.receive()
+            output_B = sensor.take_measurement()
+            first_part=output_A[0]*output_B[0]+output_A[1]*output_B[1]+output_A[2]*output_B[2]
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
-            sqrB=math.sqrt(pow(output_real[0],2)+pow(output_real[1],2)+pow(output_real[2],2))
+            sqrB=math.sqrt(pow(output_B[0],2)+pow(output_B[1],2)+pow(output_B[2],2))
             angle=first_part/(sqrA*sqrB)
             if angle>1:
                 angle=1
@@ -122,12 +77,13 @@ while True:
             kneeAngle.append(angle_degree)
             switch = True
 
-        csv_output=str(output_real)
+        #csv_output=str(output_real)
+        csv_output=str([0.06591796875,-5029296875,-10830078125,-1.15854,2.0122,-0.12195121951219513])
         csv_output=csv_output.replace("[","")
         csv_output=csv_output.replace("]","")
         f.write(str(csv_index1)+","+csv_output+"\n")
         f.close()
 
-        sensor.send('a')
+        #sensor.send('a')
         # print(sensor, output_real[3])
 

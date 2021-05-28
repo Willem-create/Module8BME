@@ -45,6 +45,7 @@ class ImuSensor:
         elif self.__mode is MODE_WIRELESS:
             return self.bt_sensor.recv(byte_len)
 
+
     def __write(self, data):
         if self.__mode is MODE_WIRED:
             return self.serial_sensor.write(data)
