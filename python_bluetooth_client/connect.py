@@ -3,8 +3,8 @@ from numpy import nanmean  # import numpy to calculate mean for moving average
 import numpy as np
 import math
 import time
-from python_bluetooth_client import ImuSensor
-from python_bluetooth_client import csv_writer
+import ImuSensor
+import csv_writer
 from scipy.signal import find_peaks
 from scipy import interpolate
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ intanglexB=0
 intangleyB=0
 intanglezB=0
 
-alpha = 0.1
+alpha = 0.5
 prevgyroangle=0
 lowpassout=0
 highpassout=0
@@ -76,9 +76,9 @@ while True:
             angleyA = output_A[4]
             anglezA = output_A[5]
 
-            anglexB = output_real[3]
-            angleyB = output_real[4]
-            anglezB = output_real[5]
+            anglexB = output_B[3]
+            angleyB = output_B[4]
+            anglezB = output_B[5]
 
             dt = time.time() - prevtime
             intanglexA = anglexA * dt + intanglexA
@@ -140,6 +140,8 @@ while True:
                 average_stride[:] = [x / (averages) for x in average_stride]
                 plt.plot(average_stride)
                 plt.show()
+                kneeAngle=[]
+                kneeTime=[]
             switch = True
 
 
