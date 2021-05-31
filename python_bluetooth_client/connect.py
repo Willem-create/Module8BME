@@ -176,6 +176,8 @@ while True:
                     kneeAngle=[]
                     kneeTime=[]
                     peaksy=[]
+            if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
+                calculated =True
 
             if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
                     average_stride2= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
@@ -190,7 +192,8 @@ while True:
                     plt.plot(error)
                     plt.show()
                     #give feedback() using error
-
+            if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
+                calculated =True
             switch = True
             #simple temporary code to give the motors some interactivity
             if total_angle<35:
