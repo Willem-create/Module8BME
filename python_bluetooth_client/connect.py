@@ -45,7 +45,7 @@ kneeAngle= list()
 kneeTime = list()
 
 #front_end = gui.Gui()
-
+average_stridelength=200
 def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
                     
                 averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
@@ -60,13 +60,13 @@ def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
                     sampley.append(ypoints2[peaksy[x]:peaksy[x + 2]])
 
                 for x in range(0, len(samplex)):
-                    newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * len(samplex[x]))
+                    newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * average_stridelength)
                     intf = interpolate.interp1d(samplex[x], sampley[x])
                     interpsample = intf(newx)
                     # print(len(interpsample))
 
                     for i in range(0, averagelength):
-                        taa[i] = (interpsample[i * len(samplex[x])])
+                        taa[i] = (interpsample[i * average_stridelength])
 
                     outputsampley.append(taa)
                     taa = [0] * averagelength
