@@ -48,7 +48,6 @@ kneeTime = list()
 
 
 
-#front_end = gui.Gui()
 average_stridelength=200
 def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
 
