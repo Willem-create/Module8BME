@@ -4,6 +4,7 @@ import numpy as np
 import math
 import time
 import ImuSensor
+import gui
 import csv_writer
 from scipy.signal import find_peaks
 from scipy import interpolate
@@ -41,6 +42,8 @@ sensitivity_gyro = 16.4
 output_A = list()
 kneeAngle= list()
 kneeTime = list()
+
+front_end = gui.Gui()
 
 for device in devices:
     if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
@@ -96,7 +99,7 @@ while True:
             prevgyroangle = gyroangle
 
             total_angle = lowpassout + highpassout
-            print(total_angle)
+            front_end.update_angle(total_angle)
 
             kneeAngle.append(total_angle)
             kneeTime.append(time.time())  # get the timestamp
