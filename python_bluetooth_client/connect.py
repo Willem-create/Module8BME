@@ -177,5 +177,5 @@ while True:
                     #give feedback() using error
 
             switch = True
-
+    front_end.sleep(0.1)
 
