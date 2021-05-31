@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BME</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"   integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="   crossorigin="anonymous"></script>
+    <script type="text/javascript" src="js/eel.js"></script>
+    <script type="text/javascript">
+      eel.expose(set_angle);
+      function set_angle(x) {
+        $('#angle').html(x + "degree");
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="angle">No data received</div>
+  </body>
+</html>
