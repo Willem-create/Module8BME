@@ -10,10 +10,11 @@ from scipy.signal import find_peaks
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
+front_end = gui.Gui()
+
 #initialize csv files
 Csv=csv_writer.CsvWriter()
 
-print("startplz")
 calculated= True
 oldAngle = 0
 
@@ -32,7 +33,7 @@ highpassout=0
 prevtime=time.time()
 oldTime = time.time()
 
-print("Scanning...")
+front_end.send_status('Scanning...')
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
 print(devices)
 filter_list = [[] for _ in range(6)]  # creates list for moving average
@@ -43,13 +44,16 @@ output_A = list()
 kneeAngle= list()
 kneeTime = list()
 
-front_end = gui.Gui()
+
+
 
 for device in devices:
     if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
+
+front_end.send_status(wirelessIMUs);
 sensors = []
 for addr, name in wirelessIMUs:  # if correct devices are found add them to the list for connection
     sensors.append(ImuSensor.ImuSensor(1, name))
@@ -100,6 +104,7 @@ while True:
 
             total_angle = lowpassout + highpassout
             front_end.update_angle(total_angle)
+            # print(total_angle)
 
             kneeAngle.append(total_angle)
             kneeTime.append(time.time())  # get the timestamp
@@ -146,6 +151,6 @@ while True:
                 kneeAngle=[]
                 kneeTime=[]
             switch = True
-
+    front_end.sleep(0.08)
 
 
