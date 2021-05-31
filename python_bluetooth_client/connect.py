@@ -180,5 +180,5 @@ while True:
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated =True
             switch = True
-
+    front_end.sleep(0.1)
 
