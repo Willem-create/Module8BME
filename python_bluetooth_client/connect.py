@@ -1,11 +1,13 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
+#pip install python_bluetooth_client\\PyBluez-0.22-cp38-cp38-win_amd64.whl
 from numpy import nanmean  # import numpy to calculate mean for moving average
 import numpy as np
 import math
 import time
-import ImuSensor
+from python_bluetooth_client import ImuSensor
 import gui
-import csv_writer
+from python_bluetooth_client import csv_writer
+from python_bluetooth_client import arduino
 from scipy.signal import find_peaks
 from scipy import interpolate
 import matplotlib.pyplot as plt
@@ -13,7 +15,19 @@ import matplotlib.pyplot as plt
 front_end = gui.Gui()
 
 #initialize csv files
+print("initializing csv")
+writeCSVs = False
 Csv=csv_writer.CsvWriter()
+
+
+#initialize serial communicaiton (com_port and baudrate)
+print("starting arduino")
+Arduino=arduino.Arduino("Com10",9600)
+time.sleep(2)
+Arduino.backUp(400)
+Arduino.backDown(400)
+Arduino.frontUp(400)
+Arduino.frontDown(400)
 
 print("startplz")
 calculated= True
@@ -45,7 +59,6 @@ sensitivity_gyro = 16.4
 output_A = list()
 kneeAngle= list()
 kneeTime = list()
-
 
 
 average_stridelength=200
@@ -101,11 +114,13 @@ while True:
 
         if switch:
             output_A =sensor.take_measurement()
-            Csv.write_value(output_A)
+            if writeCSVs:
+                Csv.write_value(output_A)
             switch = False
         else:
             output_B = sensor.take_measurement()
-            Csv.write_value(output_B)
+            if writeCSVs:
+                Csv.write_value(output_B)
             first_part=output_A[0]*output_B[0]+output_A[1]*output_B[1]+output_A[2]*output_B[2]
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
             sqrB=math.sqrt(pow(output_B[0],2)+pow(output_B[1],2)+pow(output_B[2],2))
@@ -177,5 +192,12 @@ while True:
                     #give feedback() using error
 
             switch = True
+            #simple temporary code to give the motors some interactivity
+            if total_angle<35:
+                Arduino.frontUp(500)
+                Arduino.frontDown(500)
+            if total_angle>75:
+                Arduino.backUp(500)
+                Arduino.backDown(500)
     front_end.sleep(0.1)
 
