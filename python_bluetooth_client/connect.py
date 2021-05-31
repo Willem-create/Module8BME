@@ -4,16 +4,20 @@ import numpy as np
 import math
 import time
 import ImuSensor
+import gui
 import csv_writer
 from scipy.signal import find_peaks
 from scipy import interpolate
 import matplotlib.pyplot as plt
+
+front_end = gui.Gui()
 
 #initialize csv files
 Csv=csv_writer.CsvWriter()
 
 print("startplz")
 calculated= True
+calculated_baseline=False
 oldAngle = 0
 
 intanglexA=0
@@ -31,7 +35,7 @@ highpassout=0
 prevtime=time.time()
 oldTime = time.time()
 
-print("Scanning...")
+front_end.send_status('Scanning...')
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
 print(devices)
 filter_list = [[] for _ in range(6)]  # creates list for moving average
@@ -42,11 +46,51 @@ output_A = list()
 kneeAngle= list()
 kneeTime = list()
 
+
+
+average_stridelength=200
+def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
+
+                averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
+
+                sampley = []
+                samplex = []
+                taa = [0] * averagelength
+                outputsampley = []
+
+                for x in range(waitforpeaks, (averages * 2) + waitforpeaks, 2):
+                    samplex.append(xpoints2[peaksy[x]:peaksy[x + 2]])
+                    sampley.append(ypoints2[peaksy[x]:peaksy[x + 2]])
+
+                for x in range(0, len(samplex)):
+                    newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * average_stridelength)
+                    intf = interpolate.interp1d(samplex[x], sampley[x])
+                    interpsample = intf(newx)
+                    # print(len(interpsample))
+
+                    for i in range(0, averagelength):
+                        taa[i] = (interpsample[i * average_stridelength])
+
+                    outputsampley.append(taa)
+                    taa = [0] * averagelength
+
+                average_stride = [0] * averagelength
+
+                for x in range(0, averages):
+                    average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
+                average_stride[:] = [x / (averages) for x in average_stride]
+                plt.plot(average_stride)
+                plt.show()
+
+                return average_stride
+
 for device in devices:
     if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
 print("Found these devices: ", wirelessIMUs)
+
+front_end.send_status(wirelessIMUs);
 sensors = []
 for addr, name in wirelessIMUs:  # if correct devices are found add them to the list for connection
     sensors.append(ImuSensor.ImuSensor(1, name))
@@ -96,7 +140,8 @@ while True:
             prevgyroangle = gyroangle
 
             total_angle = lowpassout + highpassout
-            print(total_angle)
+            front_end.update_angle(total_angle)
+            # print(total_angle)
 
             kneeAngle.append(total_angle)
             kneeTime.append(time.time())  # get the timestamp
@@ -108,41 +153,29 @@ while True:
 
             averages = 10  # number of averages to take
             waitforpeaks = 5  # wait for this amount of peaks before calculating
-            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated:
-                calculated = False
-                averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
+            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline==False:
 
-                sampley = []
-                samplex = []
-                taa = [0] * averagelength
-                outputsampley = []
+                    average_stride1= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+                    calculated = False
+                    calculated_baseline=True
+                    kneeAngle=[]
+                    kneeTime=[]
+                    peaksy=[]
 
-                for x in range(waitforpeaks, (averages * 2) + waitforpeaks, 2):
-                    samplex.append(xpoints2[peaksy[x]:peaksy[x + 2]])
-                    sampley.append(ypoints2[peaksy[x]:peaksy[x + 2]])
+            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
+                    average_stride2= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+                    calculated = False
+                    kneeAngle=[]
+                    kneeTime=[]
+                    peaksy=[]
 
-                for x in range(0, len(samplex)):
-                    newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * len(samplex[x]))
-                    intf = interpolate.interp1d(samplex[x], sampley[x])
-                    interpsample = intf(newx)
-                    # print(len(interpsample))
+                    error = []
+                    for i in range(0,len(average_stride1)):
+                        error.append(average_stride1[i]-average_stride2[i])
+                    plt.plot(error)
+                    plt.show()
+                    #give feedback() using error
 
-                    for i in range(0, averagelength):
-                        taa[i] = (interpsample[i * len(samplex[x])])
-
-                    outputsampley.append(taa)
-                    taa = [0] * averagelength
-
-                average_stride = [0] * averagelength
-
-                for x in range(0, averages):
-                    average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
-                average_stride[:] = [x / (averages) for x in average_stride]
-                plt.plot(average_stride)
-                plt.show()
-                kneeAngle=[]
-                kneeTime=[]
             switch = True
-
 
 
