@@ -27,7 +27,7 @@ intanglexB=0
 intangleyB=0
 intanglezB=0
 
-alpha = 0.5
+alpha = 0.3
 prevgyroangle=0
 lowpassout=0
 highpassout=0
@@ -109,7 +109,10 @@ while True:
             first_part=output_A[0]*output_B[0]+output_A[1]*output_B[1]+output_A[2]*output_B[2]
             sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
             sqrB=math.sqrt(pow(output_B[0],2)+pow(output_B[1],2)+pow(output_B[2],2))
-            angle=first_part/(sqrA*sqrB)
+            if (sqrA * sqrB) < 0.0001 & (sqrA * sqrB) > -0.0001:
+                angle = 0
+            else:
+                angle=first_part/(sqrA*sqrB)
             if angle>1:
                 angle=1
             angle_radian=math.acos(angle)
