@@ -72,4 +72,11 @@ class ImuSensor:
                 output[z] = self.__convert_acc(num)
             else:
                 output[z] = self.__convert_gyro(num)
+        self.flush()
         return output
+
+    def flush(self):
+        print('startflush')
+        print(self.bt_sensor.recv(100))
+        print('flushdone')
+        return True

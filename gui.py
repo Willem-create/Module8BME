@@ -3,8 +3,10 @@ import eel
 
 class Gui:
     def __init__(self):
-        eel.init('app')
-        eel.start('dashboard.html')
+        eel.init('../app')
+        eel.start('dashboard.html', block=False)
+        print("Starting webserver")
+        eel.sleep(1)
 
     def update_angle(self, angle):
         eel.set_angle(angle)
