@@ -49,10 +49,13 @@ for device in devices:
     if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
 
-print("Found these devices: ", wirelessIMUs)
+front_end.register_imus(wirelessIMUs)
 sensors = []
 for addr, name in wirelessIMUs:  # if correct devices are found add them to the list for connection
-    sensors.append(ImuSensor.ImuSensor(1, name))
+    front_end.set_imu_status(name, "Pairing")
+    connectedSensor = ImuSensor.ImuSensor(1, name)
+    front_end.set_imu_status(name, "Connected")
+    sensors.append(connectedSensor)
 
 while True:
     switch = True

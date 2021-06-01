@@ -2,17 +2,112 @@
 <html>
   <head>
     <title>BME</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/dashboard.css">
+  </head>
+
+  <body>
+       
+<header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+  <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="#">BME GROUP 3</a>
+  <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
+  <ul class="navbar-nav px-3">
+    <li class="nav-item text-nowrap">
+      <a class="nav-link" href="#">Stop run</a>
+    </li>
+  </ul>
+</header>
+
+<div class="container-fluid">
+  <div class="row">
+    <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+      <div class="position-sticky ">
+        <ul class="nav flex-column">
+
+          <!-- <li class="nav-item">
+            <a class="nav-link" href="#">
+              <span data-feather="file"></span>
+              Orders
+            </a>
+          </li> -->
+        </ul>
+        <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-white">
+          <span>Imu's</span>
+        </h6>
+        <div id="imu-list" class='px-2'>
+        </div>
+      </div>
+    </nav>
+
+    <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">Dashboard</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+          <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
+            <span data-feather="calendar"></span>
+            This week
+          </button>
+        </div>
+      </div>
+
+      <!-- <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas> -->
+    </main>
+  </div>
+</div>
+
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"   integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="   crossorigin="anonymous"></script>
-    <script type="text/javascript" src="js/eel.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="/eel.js"></script>
     <script type="text/javascript">
       eel.expose(set_angle);
       function set_angle(x) {
         $('#angle').html(x + "degree");
       }
-    </script>
-  </head>
 
-  <body>
-    <div id="angle">No data received</div>
+      eel.expose(register_imus);
+      function register_imus(imulist, status='Ready to connect'){
+        $.each(imulist, function(i, imu){
+          $('#imu-list').append(`
+          <div class='imu-item p-3 mb-1' data-imu='${imu[1]}'>
+            <h5 class='mb-0 h6'>${imu[1]}</h5>
+            <h6 class='mb-0 imu-status small'>${status}</h6>
+          </div>
+          `);
+        });
+      }
+
+      eel.expose(update_imu_status);
+      function update_imu_status(imu,status){
+        let imudiv = $("div").find(`[data-imu='${imu}']`);
+        imudiv.find('.imu-status').html(status); 
+      }
+
+
+// DEV shizzle 
+      // imus = [
+      //   ["ACdkajsldfk","WirelessIMU-5F16"],
+      //   ["ACdkajsldfk","WirelessIMU-6642"]
+      // ];
+      // register_imus(imus);
+
+      // setTimeout(
+      // function() 
+      // {
+      //   update_imu_status('WirelessIMU-5F16','Pairing');
+      // }, 2000);
+      // setTimeout(
+      // function() 
+      // {
+      //   update_imu_status('WirelessIMU-5F16','Connected');
+      // }, 5000);
+    </script>
   </body>
 </html>
