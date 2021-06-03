@@ -236,4 +236,3 @@ while True:
                 Arduino.backUp(500)
                 Arduino.backDown(500)
     front_end.sleep(0.1)
-
