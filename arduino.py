@@ -28,7 +28,7 @@ class Arduino:
 
     def backUp(self, x):
         if self.arduinoConnected:
-           self.serialPort.write(bytes("B"+str(x)+"\r\n",encoding='UTF-8'))
+            self.serialPort.write(bytes("B"+str(x)+"\r\n",encoding='UTF-8'))
 
     def backDown(self, x):
         if self.arduinoConnected:
@@ -42,3 +42,5 @@ class Arduino:
         self.frontUp(2000)
         time.sleep(1)
         self.frontDown(2000)
+        time.sleep(1)
+        self.backUp(2000)

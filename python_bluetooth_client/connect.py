@@ -87,8 +87,8 @@ def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
                 for x in range(0, averages):
                     average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
                 average_stride[:] = [x / (averages) for x in average_stride]
-                plt.plot(average_stride)
-                plt.show()
+                #plt.plot(average_stride)
+                #plt.show()
 
                 return average_stride,stridetime
 
@@ -178,7 +178,6 @@ while True:
                     peaksy=[]
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated =True
-
             if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
                     average_stride2, stridetime= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
                     calculated = False
@@ -216,21 +215,20 @@ while True:
                     errorsmallpeak = error[smallpeakx]
                     errorlargepeak = error[largepeakx]
 
-                   
-                    
-                    
-                    plt.plot(error)
-                    plt.show()
+                    if errorlargepeak < -4:
+                        Arduino.frontUp(500)
+                        Arduino.frontDown(500)
+                        print("you are understretching")
+                    if errorlargepeak > 4:
+                        Arduino.backUp(500)
+                        Arduino.backDown(500)
+                        print("you might be overstretching")
+                    # print(errorlargepeak)
                     #give feedback() using error
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated =True
             switch = True
             #simple temporary code to give the motors some interactivity
-            if total_angle<35:
-                Arduino.frontUp(500)
-                Arduino.frontDown(500)
-            if total_angle>75:
-                Arduino.backUp(500)
-                Arduino.backDown(500)
+
     front_end.sleep(0.1)
 
