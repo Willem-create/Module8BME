@@ -3,7 +3,7 @@ import bluetooth  # import bluetooth libary for communication with the esp32
 import numpy as np
 import math
 import time
-from python_bluetooth_client import ImuSensor
+import ImuSensor
 import gui
 import csv_writer
 import arduino
@@ -60,7 +60,7 @@ average_stridelength=200
 def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
 
                 averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
-
+                stridetime= (xpoints2[0]-xpoints2[-1])/averages
                 sampley = []
                 samplex = []
                 taa = [0] * averagelength
@@ -90,7 +90,7 @@ def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
                 plt.plot(average_stride)
                 plt.show()
 
-                return average_stride
+                return average_stride,stridetime
 
 for device in devices:
     if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
@@ -170,7 +170,7 @@ while True:
             waitforpeaks = 5  # wait for this amount of peaks before calculating
             if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline==False:
 
-                    average_stride1= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+                    average_stride1, stridetime= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
                     calculated = False
                     calculated_baseline=True
                     kneeAngle=[]
@@ -180,15 +180,45 @@ while True:
                 calculated =True
 
             if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
-                    average_stride2= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+                    average_stride2, stridetime= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
                     calculated = False
                     kneeAngle=[]
                     kneeTime=[]
                     peaksy=[]
+                    stride2peak = find_peaks(average_stride2, prominence=1)
+                    firstpeak=average_stride2[0]
+                    secondpeak = average_stride2[stride2peak]
+                    if (firstpeak > secondpeak):
+                        largepeak = firstpeak
+                        smallpeak = secondpeak
+                        tlargepeak = 0
+                        tsmallpeak = stride2peak*stridetime/200
+                        smallpeakx=stride2peak
+                        largepeakx = 0
+                    else:
+                        largepeak = secondpeak
+                        smallpeak = firstpeak
+                        tlargepeak = stride2peak*stridetime/200
+                        tsmallpeak = 0
+                        smallpeakx=0
+                        largepeakx = stride2peak
 
                     error = []
                     for i in range(0,len(average_stride1)):
                         error.append(average_stride1[i]-average_stride2[i])
+                    errorxy=[[0]*200]*2
+                    for i in range(0, len(error)):
+                        errorxy[i][0] = error[i]
+
+                    for i in range(0,stridetime, stridetime/200):
+                        errorxy[i][1]= i
+
+                    errorsmallpeak = error[smallpeakx]
+                    errorlargepeak = error[largepeakx]
+
+                   
+                    
+                    
                     plt.plot(error)
                     plt.show()
                     #give feedback() using error
