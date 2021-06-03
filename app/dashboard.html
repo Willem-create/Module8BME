@@ -51,6 +51,9 @@
         </div>
       </div>
       <div class="row">
+        <h4 id="angle" class="my-4">Waiting for live angle</h4>
+      </div>
+      <div class="row">
         <div class="col-md-6">
           <canvas id="average-stride" width="100%" height="100"></canvas>
         </div>
@@ -67,7 +70,7 @@
     <script type="text/javascript" src="/eel.js"></script>
     <script type="text/javascript">
       var ctx = document.getElementById('average-stride').getContext('2d');
-      var averageStrideChart = new Chart(ctx, {
+      var errorgraph = new Chart(ctx, {
         type: 'line',
         data: {
           labels: [1500,1600,1700,1750,1800,1850,1900,1950,1999,2050],
@@ -87,16 +90,20 @@
         }
       });
 
-      function update_average_stride_chart(data){
-        averageStrideChart.data = data;
-        averageStrideChart.update();
+      eel.expose(update_average_stride_chart);
+      function update_average_stride_chart(labels,data){
+        console.log(labels);
+        console.log(data);
+        errorgraph.data.datasets[0].data = data;
+        errorgraph.data.labels = labels;
+        errorgraph.update();
       }
-      // eel.expose(set_angle);
+      eel.expose(set_angle);
       function set_angle(x) {
         $('#angle').html(x + "degree");
       }
 
-      // eel.expose(register_imus);
+      eel.expose(register_imus);
       function register_imus(imulist, status='Ready to connect'){
         $.each(imulist, function(i, imu){
           $('#imu-list').append(`
@@ -108,39 +115,39 @@
         });
       }
 
-      // eel.expose(update_imu_status);
+      eel.expose(update_imu_status);
       function update_imu_status(imu,status){
         let imudiv = $("div").find(`[data-imu='${imu}']`);
         imudiv.find('.imu-status').html(status); 
       }
 
-      imus = [
-        ["ACdkajsldfk","WirelessIMU-5F16"],
-        ["ACdkajsldfk","WirelessIMU-6642"]
-      ];
-      register_imus(imus);
+<!--      imus = [-->
+<!--        ["ACdkajsldfk","WirelessIMU-5F16"],-->
+<!--        ["ACdkajsldfk","WirelessIMU-6642"]-->
+<!--      ];-->
+<!--      register_imus(imus);-->
 
-      setTimeout(
-      function() 
-      {
-        update_imu_status('WirelessIMU-5F16','Pairing');
-      }, 2000);
-      setTimeout(
-      function() 
-      {
-        update_imu_status('WirelessIMU-5F16','Connected');
-      }, 5000);
+<!--      setTimeout(-->
+<!--      function() -->
+<!--      {-->
+<!--        update_imu_status('WirelessIMU-5F16','Pairing');-->
+<!--      }, 2000);-->
+<!--      setTimeout(-->
+<!--      function() -->
+<!--      {-->
+<!--        update_imu_status('WirelessIMU-5F16','Connected');-->
+<!--      }, 5000);-->
 
-      setTimeout(
-      function() 
-      {
-        update_imu_status('WirelessIMU-6642','Pairing');
-      }, 3000);
-      setTimeout(
-      function() 
-      {
-        update_imu_status('WirelessIMU-6642','Connected');
-      }, 10000);
+<!--      setTimeout(-->
+<!--      function() -->
+<!--      {-->
+<!--        update_imu_status('WirelessIMU-6642','Pairing');-->
+<!--      }, 3000);-->
+<!--      setTimeout(-->
+<!--      function() -->
+<!--      {-->
+<!--        update_imu_status('WirelessIMU-6642','Connected');-->
+<!--      }, 10000);-->
     </script>
   </body>
 </html>

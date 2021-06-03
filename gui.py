@@ -17,5 +17,8 @@ class Gui:
     def set_imu_status(self,name,status):
         eel.update_imu_status(name,status)
 
+    def set_error_graph(self,errorlabel, errorvalue):
+        eel.set_error_graph(errorlabel,errorvalue)
+
     def sleep(self,seconds):
         eel.sleep(seconds)
