@@ -49,7 +49,6 @@ highpassout=0
 prevtime=time.time()
 oldTime = time.time()
 
-front_end.send_status('Scanning...')
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
 print(devices)
 filter_list = [[] for _ in range(6)]  # creates list for moving average
