@@ -205,12 +205,15 @@ while True:
                     error = []
                     for i in range(0,len(average_stride1)):
                         error.append(average_stride1[i]-average_stride2[i])
-                    errorxy=[[0]*200]*2
+                    errorlabel=[[0]*200]
+                    errorvalue = [[0] * 200]
                     for i in range(0, len(error)):
-                        errorxy[i][0] = error[i]
+                        errorvalue[i] = error[i]
 
-                    for i in range(0,stridetime, stridetime/200):
-                        errorxy[i][1]= i
+                    for i in range(0,len(error)):
+                        errorlabel[i]= i * (stridetime / len(error))
+                    print("sending error", errorvalue)
+                    front_end.set_error_graph(errorlabel, errorvalue)
 
                     errorsmallpeak = error[smallpeakx]
                     errorlargepeak = error[largepeakx]
