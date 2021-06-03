@@ -57,9 +57,9 @@ kneeTime = list()
 
 
 average_stridelength=200
-def compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy):
+def compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy):
 
-                averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
+
                 stridetime= (xpoints2[0]-xpoints2[-1])/averages
                 sampley = []
                 samplex = []
@@ -166,11 +166,12 @@ while True:
             xpoints2 = np.array(kneeTime)
             ypoints2 = np.array(kneeAngle)
 
-            averages = 10  # number of averages to take
-            waitforpeaks = 5  # wait for this amount of peaks before calculating
+            averages = 3  # number of averages to take
+            waitforpeaks = 2  # wait for this amount of peaks before calculating
+            print("len(peaksy) is "+str(len(peaksy))+", calculated is "+str(calculated)+", calculated_baseline is "+str(calculated_baseline))
             if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline==False:
-
-                    average_stride1, stridetime= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+                    averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
+                    average_stride1, stridetime= compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy)
                     calculated = False
                     calculated_baseline=True
                     kneeAngle=[]
@@ -178,50 +179,51 @@ while True:
                     peaksy=[]
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated =True
-            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
-                    average_stride2, stridetime= compute_averagestride(averages,waitforpeaks,xpoints2,ypoints2,peaksy)
+            if len(peaksy) >= (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
+
+                    average_stride2, stridetime= compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy)
                     calculated = False
+
                     kneeAngle=[]
                     kneeTime=[]
                     peaksy=[]
-                    stride2peak = find_peaks(average_stride2, prominence=1)
+                    stride2peak, _ = find_peaks(average_stride2, prominence=1)
                     firstpeak=average_stride2[0]
-                    secondpeak = average_stride2[stride2peak]
+                    if len(stride2peak)==0:
+                        stride2peak = [0]
+                    secondpeak = average_stride2[int(stride2peak[0])]
+                    secondpeak = 0
                     if (firstpeak > secondpeak):
                         largepeak = firstpeak
                         smallpeak = secondpeak
                         tlargepeak = 0
-                        tsmallpeak = stride2peak*stridetime/200
-                        smallpeakx=stride2peak
+                        tsmallpeak = stride2peak[0]*stridetime/200
+                        smallpeakx=stride2peak[0]
                         largepeakx = 0
                     else:
                         largepeak = secondpeak
                         smallpeak = firstpeak
-                        tlargepeak = stride2peak*stridetime/200
+                        tlargepeak = stride2peak[0]*stridetime/200
                         tsmallpeak = 0
                         smallpeakx=0
-                        largepeakx = stride2peak
+                        largepeakx = stride2peak[0]
 
                     error = []
                     for i in range(0,len(average_stride1)):
                         error.append(average_stride1[i]-average_stride2[i])
-                    errorxy=[[0]*200]*2
-                    for i in range(0, len(error)):
-                        errorxy[i][0] = error[i]
 
-                    for i in range(0,stridetime, stridetime/200):
-                        errorxy[i][1]= i
+
 
                     errorsmallpeak = error[smallpeakx]
                     errorlargepeak = error[largepeakx]
-
+                    print("error calculated")
                     if errorlargepeak < -4:
-                        Arduino.frontUp(500)
-                        Arduino.frontDown(500)
-                        print("you are understretching")
-                    if errorlargepeak > 4:
                         Arduino.backUp(500)
                         Arduino.backDown(500)
+                        print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching")
+                    if errorlargepeak > 4:
+                        Arduino.frontUp(500)
+                        Arduino.frontDown(500)
                         print("you might be overstretching")
                     # print(errorlargepeak)
                     #give feedback() using error
@@ -229,6 +231,6 @@ while True:
                 calculated =True
             switch = True
             #simple temporary code to give the motors some interactivity
-
+            # print("just did a loop")
     front_end.sleep(0.1)
 
