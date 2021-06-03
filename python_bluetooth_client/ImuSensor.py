@@ -78,6 +78,7 @@ class ImuSensor:
 
     def flush(self):
         # print('startflush')
-        # print(self.bt_sensor.recv(1'00))
+        temp= self.bt_sensor.recv(100)
+        # print(self.bt_sensor.recv(100))
         # print('flushdone')
         return True
