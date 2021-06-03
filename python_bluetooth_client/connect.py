@@ -1,5 +1,6 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
 # pip install python_bluetooth_client\\PyBluez-0.22-cp38-cp38-win_amd64.whl
+import eel
 import numpy as np
 import math
 import time
@@ -110,10 +111,9 @@ def compute_averagestride(averages, averagelength, waitforpeaks, xpoints2, ypoin
 
     return average_stride, stridetime
 
-
 def resetandrecal():
     global calculated, calculated_baseline, kneeAngle, kneeTime, peaksy
-    print('Reseting stride detection!')
+    front_end.notification('Reseting stride detection!')
     calculated = True
     calculated_baseline = False
     kneeAngle = []
@@ -173,7 +173,7 @@ while True:
             prevgyroangle = gyroangle
 
             total_angle = lowpassout + highpassout
-            front_end.update_angle(total_angle)
+            front_end.update_angle(round(total_angle, 1))
             # print(total_angle)
 
             kneeAngle.append(total_angle)
@@ -183,7 +183,6 @@ while True:
             switch = True
             xpoints2 = np.array(kneeTime)
             ypoints2 = np.array(kneeAngle)
-
             averages = 6  # number of averages to take
             waitforpeaks = 2  # wait for this amount of peaks before calculating
             # print("len(peaksy) is "+str(len(peaksy))+", calculated is "+str(calculated)+", calculated_baseline is "+str(calculated_baseline))
@@ -196,7 +195,17 @@ while True:
                 kneeAngle = []
                 kneeTime = []
                 peaksy = []
+
+                baselinelabel = [None] * len(average_stride1)
+                baselinevalue = [None] * len(average_stride1)
+                for i in range(0, len(average_stride1)):
+                    baselinelabel[i] = round(i * (stridetime / len(average_stride1)), 2)
+                    baselinevalue[i] = average_stride1[i]
+                front_end.set_baseline_graph(baselinelabel, baselinevalue)
+
+
                 print("determined the baseline")
+                front_end.notification('Baseline determined')
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated = True
             if len(peaksy) >= (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
@@ -204,6 +213,13 @@ while True:
                 average_stride2, stridetime = compute_averagestride(averages, averagelength, waitforpeaks, xpoints2,
                                                                     ypoints2, peaksy)
                 calculated = False
+
+                averagelabel = [None] * len(average_stride2)
+                averagevalue = [None] * len(average_stride2)
+                for i in range(0, len(average_stride2)):
+                    averagelabel[i] = round(i * (stridetime / len(average_stride2)), 2)
+                    averagevalue[i] = average_stride2[i]
+                front_end.set_average_graph(averagelabel, averagevalue)
 
                 kneeAngle = []
                 kneeTime = []
@@ -233,6 +249,13 @@ while True:
                 for i in range(0, len(average_stride1)):
                     error.append(average_stride1[i] - average_stride2[i])
 
+                errorlabel = [None] * len(error)
+                errorvalue = [None] * len(error)
+                for i in range(0, len(error)):
+                    errorvalue[i] = -1 * error[i]
+                    errorlabel[i] = round(i * (stridetime / len(error)), 2)
+                front_end.set_error_graph(errorlabel, errorvalue)
+
                 errorsmallpeak = error[smallpeakx]
                 errorlargepeak = error[largepeakx]
                 # give feedback() using error
@@ -243,25 +266,31 @@ while True:
                         Arduino.backUp(500)
                         Arduino.backDown(500)
                         print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching (large peak)")
+                        front_end.feedback('Keep your leg straighter during its forward motion', 'Forward swing')
                     else:
                         if errorlargepeak > errorlargetrigger[1]:
                             Arduino.frontUp(500)
                             Arduino.frontDown(500)
                             print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou might be overstretching (large peak)")
+                            front_end.feedback('Bend you leg more during its forward motion', 'Forward swing')
                         else:
                             print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are doing fine (large peak)")
+                            front_end.feedback('You are doing great', 'Forward swing')
                 else:
                     if errorsmallpeak < errorsmalltrigger[0]:
                         Arduino.backUp(500)
                         Arduino.backDown(500)
                         print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching (small peak)")
+                        front_end.feedback('Keep your leg straighter during its backward motion', 'Backward swing')
                     else:
                         if errorsmallpeak > errorsmalltrigger[1]:
                             Arduino.frontUp(500)
                             Arduino.frontDown(500)
                             print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou might be overstretching (small peak)")
+                            front_end.feedback('Bend you leg more during its backward motion', 'Backward swing')
                         else:
                             print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are doing fine (small peak)")
+                            front_end.feedback('You are doing great', 'Backward swing')
 
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
                 calculated = True
@@ -271,7 +300,7 @@ while True:
         if keyboard.is_pressed('r'):  # if key 'r' is pressed
             resetandrecal()
         if keyboard.is_pressed('a'):  # if key 'a' is pressed
-            print('testing arduino!')
+            front_end.notification('Testing Arduino!')
             Arduino.startCycle()
     except:
         temp = 0
