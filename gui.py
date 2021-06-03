@@ -16,3 +16,6 @@ class Gui:
         
     def set_imu_status(self,name,status):
         eel.update_imu_status(name,status)
+
+    def sleep(self,seconds):
+        eel.sleep(seconds)

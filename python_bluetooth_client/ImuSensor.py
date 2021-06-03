@@ -24,12 +24,13 @@ class ImuSensor:
             services = bluetooth.find_service(address=sensor_device[0])
             for serv in services:
                 if serv['name'] == b'ESP32SPP\x00':
+                    print("connection to "+name)
                     self.bt_sensor = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
                     self.bt_sensor.connect((serv['host'], serv['port']))
                     self.bt_sensor.setblocking(0)
                     self.bt_sensor.settimeout(1000)
                     return
-            raise RuntimeError('Could connect to sensor.')
+            raise RuntimeError('Could not connect to sensor.')
         else:
             raise ValueError('Invalid mode selected.')
 
