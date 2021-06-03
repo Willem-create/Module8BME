@@ -1,5 +1,5 @@
 import bluetooth  # import bluetooth libary for communication with the esp32
-#pip install python_bluetooth_client\\PyBluez-0.22-cp38-cp38-win_amd64.whl
+# pip install python_bluetooth_client\\PyBluez-0.22-cp38-cp38-win_amd64.whl
 import numpy as np
 import math
 import time
@@ -10,39 +10,43 @@ import arduino
 from scipy.signal import find_peaks
 from scipy import interpolate
 import matplotlib.pyplot as plt
+import keyboard
+
+uselargepeak = False #true: giving feedback on largepeak, false: giving feedback on smallpeak
+errorlargetrigger=[-4,4] #first value is the trigger for understretching, second is for overstretching
+errorsmalltrigger=[-15,15]
 
 front_end = gui.Gui()
 
-#initialize csv files
+# initialize csv files
 print("initializing csv")
 writeCSVs = False
-Csv= csv_writer.CsvWriter()
+Csv = csv_writer.CsvWriter()
 
-
-#initialize serial communicaiton (com_port and baudrate)
+# initialize serial communicaiton (com_port and baudrate)
 print("starting arduino")
-Arduino= arduino.Arduino("Com10", 9600)
+Arduino = arduino.Arduino("Com10", 9600)
 time.sleep(1)
 Arduino.startCycle()
 
 print("startplz")
-calculated= True
-calculated_baseline=False
+calculated = True
+calculated_baseline = False
 oldAngle = 0
 
-intanglexA=0
-intangleyA=0
-intanglezA=0
-intanglexB=0
-intangleyB=0
-intanglezB=0
+intanglexA = 0
+intangleyA = 0
+intanglezA = 0
+intanglexB = 0
+intangleyB = 0
+intanglezB = 0
 
 alpha = 0.3
-prevgyroangle=0
-lowpassout=0
-highpassout=0
+prevgyroangle = 0
+lowpassout = 0
+highpassout = 0
 
-prevtime=time.time()
+prevtime = time.time()
 oldTime = time.time()
 
 devices = bluetooth.discover_devices(lookup_names=True)  # searches for bluetooth devices
@@ -52,49 +56,16 @@ wirelessIMUs = []
 sensitivity_acc = 2048
 sensitivity_gyro = 16.4
 output_A = list()
-kneeAngle= list()
+kneeAngle = list()
 kneeTime = list()
 
-
-average_stridelength=200
-def compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy):
-
-
-                stridetime= (xpoints2[0]-xpoints2[-1])/averages
-                sampley = []
-                samplex = []
-                taa = [0] * averagelength
-                outputsampley = []
-
-                for x in range(waitforpeaks, (averages * 2) + waitforpeaks, 2):
-                    samplex.append(xpoints2[peaksy[x]:peaksy[x + 2]])
-                    sampley.append(ypoints2[peaksy[x]:peaksy[x + 2]])
-
-                for x in range(0, len(samplex)):
-                    newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * average_stridelength)
-                    intf = interpolate.interp1d(samplex[x], sampley[x])
-                    interpsample = intf(newx)
-                    # print(len(interpsample))
-
-                    for i in range(0, averagelength):
-                        taa[i] = (interpsample[i * average_stridelength])
-
-                    outputsampley.append(taa)
-                    taa = [0] * averagelength
-
-                average_stride = [0] * averagelength
-
-                for x in range(0, averages):
-                    average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
-                average_stride[:] = [x / (averages) for x in average_stride]
-                #plt.plot(average_stride)
-                #plt.show()
-
-                return average_stride,stridetime
+average_stridelength = 200
 
 for device in devices:
-    if device[1] == 'WirelessIMU-6642' or device[1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
+    if device[1] == 'WirelessIMU-6642' or device[
+        1] == 'WirelessIMU-5F16':  # searches for a device called: WirelessIMUX. in which X is the number on your casing
         wirelessIMUs.append(device)
+print("found the two sensors: "+str(wirelessIMUs))
 
 front_end.register_imus(wirelessIMUs)
 sensors = []
@@ -105,12 +76,57 @@ for addr, name in wirelessIMUs:  # if correct devices are found add them to the 
     front_end.set_imu_status(name, "Connected")
     sensors.append(connectedSensor)
 
+
+def compute_averagestride(averages, averagelength, waitforpeaks, xpoints2, ypoints2, peaksy):
+    stridetime = (xpoints2[0] - xpoints2[-1]) / averages
+    sampley = []
+    samplex = []
+    taa = [0] * averagelength
+    outputsampley = []
+
+    for x in range(waitforpeaks, (averages * 2) + waitforpeaks, 2):
+        samplex.append(xpoints2[peaksy[x]:peaksy[x + 2]])
+        sampley.append(ypoints2[peaksy[x]:peaksy[x + 2]])
+
+    for x in range(0, len(samplex)):
+        newx = np.linspace(samplex[x][0], samplex[x][-1], averagelength * average_stridelength)
+        intf = interpolate.interp1d(samplex[x], sampley[x])
+        interpsample = intf(newx)
+        # print(len(interpsample))
+
+        for i in range(0, averagelength):
+            taa[i] = (interpsample[i * average_stridelength])
+
+        outputsampley.append(taa)
+        taa = [0] * averagelength
+
+    average_stride = [0] * averagelength
+
+    for x in range(0, averages):
+        average_stride = [average_stride[i] + outputsampley[x][i] for i in range(len(outputsampley[x]))]
+    average_stride[:] = [x / (averages) for x in average_stride]
+    # plt.plot(average_stride)
+    # plt.show()
+
+    return average_stride, stridetime
+
+
+def resetandrecal():
+    global calculated, calculated_baseline, kneeAngle, kneeTime, peaksy
+    print('Reseting stride detection!')
+    calculated = True
+    calculated_baseline = False
+    kneeAngle = []
+    kneeTime = []
+    peaksy = []
+
+
 while True:
     switch = True
     for sensor in sensors:
 
         if switch:
-            output_A =sensor.take_measurement()
+            output_A = sensor.take_measurement()
             if writeCSVs:
                 Csv.write_value(output_A)
             switch = False
@@ -118,18 +134,18 @@ while True:
             output_B = sensor.take_measurement()
             if writeCSVs:
                 Csv.write_value(output_B)
-            first_part=output_A[0]*output_B[0]+output_A[1]*output_B[1]+output_A[2]*output_B[2]
-            sqrA=math.sqrt(pow(output_A[0],2)+pow(output_A[1],2)+pow(output_A[2],2))
-            sqrB=math.sqrt(pow(output_B[0],2)+pow(output_B[1],2)+pow(output_B[2],2))
+            first_part = output_A[0] * output_B[0] + output_A[1] * output_B[1] + output_A[2] * output_B[2]
+            sqrA = math.sqrt(pow(output_A[0], 2) + pow(output_A[1], 2) + pow(output_A[2], 2))
+            sqrB = math.sqrt(pow(output_B[0], 2) + pow(output_B[1], 2) + pow(output_B[2], 2))
             # if (sqrA * sqrB) < 0.0001 & (sqrA * sqrB) > -0.0001:
             #     angle = 0
             # else:
-            angle=first_part/(sqrA*sqrB)
-            if angle>1:
-                angle=1
-            angle_radian=math.acos(angle)
-            angle_degree=angle_radian*180/math.pi
-            #print(str(angle_degree))
+            angle = first_part / (sqrA * sqrB)
+            if angle > 1:
+                angle = 1
+            angle_radian = math.acos(angle)
+            angle_degree = angle_radian * 180 / math.pi
+            # print(str(angle_degree))
 
             anglexA = output_A[3]
             angleyA = output_A[4]
@@ -149,7 +165,9 @@ while True:
             intanglezB = anglezB * dt + intanglezB
             prevtime = time.time()
 
-            gyroangle = math.sqrt(math.pow((intanglexA - intanglexB), 2) + math.pow((intangleyA - intangleyB), 2) + math.pow((intanglezA - intanglezB), 2))
+            gyroangle = math.sqrt(
+                math.pow((intanglexA - intanglexB), 2) + math.pow((intangleyA - intangleyB), 2) + math.pow(
+                    (intanglezA - intanglezB), 2))
             lowpassout = (1 - alpha) * angle_degree + alpha * lowpassout
             highpassout = (1 - alpha) * highpassout + (1 - alpha) * (gyroangle - prevgyroangle)
             prevgyroangle = gyroangle
@@ -166,71 +184,94 @@ while True:
             xpoints2 = np.array(kneeTime)
             ypoints2 = np.array(kneeAngle)
 
-            averages = 3  # number of averages to take
+            averages = 6  # number of averages to take
             waitforpeaks = 2  # wait for this amount of peaks before calculating
-            print("len(peaksy) is "+str(len(peaksy))+", calculated is "+str(calculated)+", calculated_baseline is "+str(calculated_baseline))
-            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline==False:
-                    averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
-                    average_stride1, stridetime= compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy)
-                    calculated = False
-                    calculated_baseline=True
-                    kneeAngle=[]
-                    kneeTime=[]
-                    peaksy=[]
+            # print("len(peaksy) is "+str(len(peaksy))+", calculated is "+str(calculated)+", calculated_baseline is "+str(calculated_baseline))
+            if len(peaksy) == (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline == False:
+                averagelength = round((peaksy[averages * 2] - peaksy[0]) / averages)
+                average_stride1, stridetime = compute_averagestride(averages, averagelength, waitforpeaks, xpoints2,
+                                                                    ypoints2, peaksy)
+                calculated = False
+                calculated_baseline = True
+                kneeAngle = []
+                kneeTime = []
+                peaksy = []
+                print("determined the baseline")
             if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
-                calculated =True
+                calculated = True
             if len(peaksy) >= (averages * 2) + 1 + waitforpeaks and calculated and calculated_baseline:
 
-                    average_stride2, stridetime= compute_averagestride(averages,averagelength,waitforpeaks,xpoints2,ypoints2,peaksy)
-                    calculated = False
+                average_stride2, stridetime = compute_averagestride(averages, averagelength, waitforpeaks, xpoints2,
+                                                                    ypoints2, peaksy)
+                calculated = False
 
-                    kneeAngle=[]
-                    kneeTime=[]
-                    peaksy=[]
-                    stride2peak, _ = find_peaks(average_stride2, prominence=1)
-                    firstpeak=average_stride2[0]
-                    if len(stride2peak)==0:
-                        stride2peak = [0]
-                    secondpeak = average_stride2[int(stride2peak[0])]
-                    secondpeak = 0
-                    if (firstpeak > secondpeak):
-                        largepeak = firstpeak
-                        smallpeak = secondpeak
-                        tlargepeak = 0
-                        tsmallpeak = stride2peak[0]*stridetime/200
-                        smallpeakx=stride2peak[0]
-                        largepeakx = 0
-                    else:
-                        largepeak = secondpeak
-                        smallpeak = firstpeak
-                        tlargepeak = stride2peak[0]*stridetime/200
-                        tsmallpeak = 0
-                        smallpeakx=0
-                        largepeakx = stride2peak[0]
+                kneeAngle = []
+                kneeTime = []
+                peaksy = []
+                stride2peak, _ = find_peaks(average_stride2, prominence=1)
+                firstpeak = average_stride2[0]
+                if len(stride2peak) == 0:
+                    stride2peak = [0]
+                secondpeak = average_stride2[int(stride2peak[0])]
+                secondpeak = 0
+                if (firstpeak > secondpeak):
+                    largepeak = firstpeak
+                    smallpeak = secondpeak
+                    tlargepeak = 0
+                    tsmallpeak = stride2peak[0] * stridetime / 200
+                    smallpeakx = stride2peak[0]
+                    largepeakx = 0
+                else:
+                    largepeak = secondpeak
+                    smallpeak = firstpeak
+                    tlargepeak = stride2peak[0] * stridetime / 200
+                    tsmallpeak = 0
+                    smallpeakx = 0
+                    largepeakx = stride2peak[0]
 
-                    error = []
-                    for i in range(0,len(average_stride1)):
-                        error.append(average_stride1[i]-average_stride2[i])
+                error = []
+                for i in range(0, len(average_stride1)):
+                    error.append(average_stride1[i] - average_stride2[i])
 
-
-
-                    errorsmallpeak = error[smallpeakx]
-                    errorlargepeak = error[largepeakx]
-                    print("error calculated")
-                    if errorlargepeak < -4:
+                errorsmallpeak = error[smallpeakx]
+                errorlargepeak = error[largepeakx]
+                # give feedback() using error
+                print("error largepeak calculated: " + str(errorlargepeak))
+                print("error smallpeak calculated: " + str(errorsmallpeak))
+                if uselargepeak: #boolean to switch between using small or large peak for feedback
+                    if errorlargepeak < errorlargetrigger[0]:
                         Arduino.backUp(500)
                         Arduino.backDown(500)
-                        print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching")
-                    if errorlargepeak > 4:
-                        Arduino.frontUp(500)
-                        Arduino.frontDown(500)
-                        print("you might be overstretching")
-                    # print(errorlargepeak)
-                    #give feedback() using error
-            if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
-                calculated =True
-            switch = True
-            #simple temporary code to give the motors some interactivity
-            # print("just did a loop")
-    front_end.sleep(0.1)
+                        print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching (large peak)")
+                    else:
+                        if errorlargepeak > errorlargetrigger[1]:
+                            Arduino.frontUp(500)
+                            Arduino.frontDown(500)
+                            print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou might be overstretching (large peak)")
+                        else:
+                            print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are doing fine (large peak)")
+                else:
+                    if errorsmallpeak < errorsmalltrigger[0]:
+                        Arduino.backUp(500)
+                        Arduino.backDown(500)
+                        print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are understretching (small peak)")
+                    else:
+                        if errorsmallpeak > errorsmalltrigger[1]:
+                            Arduino.frontUp(500)
+                            Arduino.frontDown(500)
+                            print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou might be overstretching (small peak)")
+                        else:
+                            print("\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tyou are doing fine (small peak)")
 
+            if len(peaksy) == (averages * 2) + 2 + waitforpeaks:
+                calculated = True
+            switch = True
+    front_end.sleep(0.1)
+    try:  # used try so that if user pressed other than the given key error will not be shown
+        if keyboard.is_pressed('r'):  # if key 'r' is pressed
+            resetandrecal()
+        if keyboard.is_pressed('a'):  # if key 'a' is pressed
+            print('testing arduino!')
+            Arduino.startCycle()
+    except:
+        temp = 0
