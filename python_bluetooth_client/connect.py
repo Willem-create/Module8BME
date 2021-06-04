@@ -302,5 +302,14 @@ while True:
         if keyboard.is_pressed('a'):  # if key 'a' is pressed
             front_end.notification('Testing Arduino!')
             Arduino.startCycle()
+        if keyboard.is_pressed('s'):  # if key 's' is pressed
+            if uselargepeak:
+                front_end.notification('Set mode to: Backward swing')
+                print('Set mode to: Backward swing, smallpeak')
+                uselargepeak=False
+            else:
+                front_end.notification('Set mode to: Forward swing')
+                print('Set mode to: Forward swing, largepeak')
+                uselargepeak = True
     except:
         temp = 0
